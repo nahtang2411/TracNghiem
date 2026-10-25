@@ -1,0 +1,403 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Info, List, GraduationCap, Filter } from 'lucide-react';
+
+// Dữ liệu 145 câu hỏi (Nhận thức, Cơ bản, Nâng cao)
+const quizData = [
+  // === PHẦN 1: TÀI NGUYÊN, MÔI TRƯỜNG & PTBV ===
+  {id:1,diff:'nhanthuc',q:"Định nghĩa Phát triển bền vững (Brundtland 1987) là gì?",opts:["Tối đa hóa lợi ích kinh tế hiện tại","Đáp ứng nhu cầu hiện tại mà ko làm tổn hại tương lai","Chỉ BV môi trường tuyệt đối","Ưu tiên an sinh xã hội toàn cầu"],ans:1,exp:"Định nghĩa của Ủy ban Brundtland (1987) trong báo cáo 'Our Common Future'."},
+  {id:2,diff:'nhanthuc',q:"Ba trụ cột chính của Phát triển bền vững là gì?",opts:["Kinh tế, Chính trị, Văn hóa","Môi trường, Giáo dục, Y tế","Kinh tế, Xã hội, Môi trường","Xã hội, Công nghệ, Tài chính"],ans:2,exp:"3 trụ cột: Economic, Social, Environmental."},
+  {id:3,diff:'nangcao',q:"Sự giao thoa giữa trụ cột 'Kinh tế' và 'Môi trường' tạo ra tính chất gì?",opts:["Công bằng (Equitable)","Bền chịu (Bearable)","Bền vững (Sustainable)","Khả thi (Viable)"],ans:3,exp:"KT x MT = Khả thi (Viable). VD: thuế carbon, năng lượng sạch."},
+  {id:4,diff:'coban',q:"Nguyên tắc 'Người gây ô nhiễm phải trả tiền' viết tắt là gì?",opts:["EIA","PPP","EPR","SDG"],ans:1,exp:"PPP (Polluter Pays Principle) - nội hóa chi phí MT vào giá cả."},
+  {id:5,diff:'nhanthuc',q:"Chương trình Nghị sự 2030 của LHQ có bao nhiêu Mục tiêu PTBV (SDGs)?",opts:["8","15","17","21"],ans:2,exp:"17 mục tiêu (SDGs) với 169 chỉ tiêu cụ thể, bao phủ 5 chủ đề."},
+  {id:6,diff:'coban',q:"Chức năng nào của Môi trường đóng vai trò 'giới hạn sinh thái'?",opts:["Cung cấp không gian sống","Cung cấp TNTN","Tiếp nhận và xử lý chất thải","Lưu trữ thông tin"],ans:2,exp:"Khả năng hấp thụ, phân hủy chất thải có giới hạn, nếu vượt sẽ gây ô nhiễm."},
+  {id:7,diff:'nangcao',q:"Thuộc tính nào thể hiện sự liên kết mật thiết giữa TN nhân tạo và TN thiên nhiên?",opts:["Tính nhân tạo","Tính tích lũy","Tính hao mòn","Tính phụ thuộc"],ans:3,exp:"TN nhân tạo phụ thuộc vào TNTN làm đầu vào (nguyên liệu)."},
+  {id:8,diff:'coban',q:"Cây xanh quang hợp, tạo Oxy thuộc nhóm dịch vụ hệ sinh thái nào?",opts:["Cung ứng","Điều tiết","Văn hóa","Hỗ trợ"],ans:3,exp:"Dịch vụ Hỗ trợ (Supporting) gồm quang hợp, chu trình dinh dưỡng, hình thành đất."},
+  {id:9,diff:'nhanthuc',q:"UNESCO (1981) định nghĩa Môi trường là gì?",opts:["Chỉ gồm cây cối và động vật","Toàn bộ điều kiện bên ngoài ảnh hưởng đến sự sống, tồn tại và phát triển của sinh vật","Là tài nguyên khoáng sản","Là hệ thống kinh tế"],ans:1,exp:"Đây là định nghĩa chuẩn của UNESCO 1981."},
+  {id:10,diff:'coban',q:"Môi trường xã hội bao gồm những yếu tố nào?",opts:["Đất, nước, KK","Hạ tầng, đô thị","Thể chế, văn hóa, luật pháp, quan hệ XH","Thị trường, thương mại"],ans:2,exp:"MT Xã hội liên quan đến mối quan hệ giữa người với người (thể chế, luật pháp)."},
+  {id:11,diff:'nhanthuc',q:"Tài nguyên tái tạo (Renewable) bao gồm:",opts:["Rừng, thủy sản, nước, năng lượng mặt trời","Sắt, đồng, nhôm","Than, dầu mỏ, khí thiên nhiên","Urani, thori"],ans:0,exp:"Rừng, nước, NL mặt trời có thể tự phục hồi nếu khai thác bền vững."},
+  {id:12,diff:'coban',q:"Đặc điểm 'Tính đa dụng' của TNTN nghĩa là gì?",opts:["Chỉ dùng cho 1 mục đích","1 TN phục vụ nhiều mục đích (VD: nước dùng cho SH, NN, thủy điện)","Không thể phân hủy","Chỉ có ở kim loại"],ans:1,exp:"TNTN có thể dùng cho nhiều ngành khác nhau."},
+  {id:13,diff:'nhanthuc',q:"Vốn nhân tạo được phân thành 3 loại chính là gì?",opts:["Vốn TN, Vốn XH, Vốn Hóa học","Vốn SX, Vốn con người, Vốn tài chính","Vốn sinh học, Vốn địa lý, Vốn vật lý","Vốn cơ sở, Vốn thượng tầng, Vốn trung gian"],ans:1,exp:"TN nhân tạo gồm: Vốn SX (máy móc), Vốn con người (tri thức), Vốn tài chính (tiền)."},
+  {id:14,diff:'nangcao',q:"Dịch vụ 'Điều tiết' của Vốn tự nhiên mang lại lợi ích gì?",opts:["Lương thực, gỗ","Điều hòa khí hậu, lọc nước tự nhiên, phân hủy chất thải","Nghiên cứu, giáo dục","Hình thành đất"],ans:1,exp:"Điều tiết giúp Trái đất tự cân bằng (lọc nước, hấp thụ CO2)."},
+  {id:15,diff:'coban',q:"Phát triển bền vững theo tiếp cận Sinh thái học (Daly, 1990) ưu tiên điều gì?",opts:["Tăng trưởng GDP","Sự phát triển nằm trong giới hạn chịu tải của hệ sinh thái","Nâng cao chất lượng y tế","Tăng xuất khẩu"],ans:1,exp:"Phải duy trì tính toàn vẹn sinh thái, không vượt quá giới hạn chịu tải."},
+  {id:16,diff:'nangcao',q:"Nguyên tắc 'Phòng ngừa' (Precautionary Principle) quy định gì?",opts:["Đeo khẩu trang khi ô nhiễm","Chỉ dừng dự án khi có 100% bằng chứng khoa học","Không dùng sự thiếu chắc chắn KH làm lý do trì hoãn biện pháp ngăn chặn thiệt hại MT","Cấm mọi dự án công nghiệp"],ans:2,exp:"Khi có nguy cơ lớn, phải hành động ngay dù KH chưa chứng minh 100%."},
+  {id:17,diff:'nhanthuc',q:"Mục tiêu Net Zero của Việt Nam được cam kết đạt được vào năm nào?",opts:["2030","2040","2050","2060"],ans:2,exp:"Tại COP26, VN cam kết phát thải ròng bằng 0 vào 2050."},
+  {id:18,diff:'coban',q:"Chỉ số HDI (Phát triển con người) đo lường 3 tiêu chí nào?",opts:["GDP, Tội phạm, Môi trường","Kinh tế, Tuổi thọ sức khỏe, Giáo dục","Dân số, Diện tích, Quân sự","Điện, Nước, Rác thải"],ans:1,exp:"HDI = Thu nhập + Tuổi thọ + Tri thức học vấn."},
+  {id:19,diff:'nangcao',q:"Khái niệm 'Giới hạn hành tinh' (Planetary Boundaries) có ý nghĩa gì?",opts:["Chia ranh giới quốc gia","9 ranh giới an toàn nhân loại ko được vượt qua để giữ TĐ ổn định","Giới hạn khai thác mỏ","Khoảng cách đến Mặt trăng"],ans:1,exp:"Xác định 9 hệ thống sinh thái cốt lõi duy trì sự sống TĐ."},
+  {id:20,diff:'nhanthuc',q:"ESG là tiêu chuẩn gì trong kinh doanh bền vững?",opts:["Energy, Sun, Gas","Environment, Social, Governance","Economy, Society, Government","End, Stop, Go"],ans:1,exp:"ESG: Môi trường - Xã hội - Quản trị, tiêu chuẩn đầu tư quốc tế hiện nay."},
+
+  // === PHẦN 2: Ô NHIỄM ĐẤT ===
+  {id:21,diff:'coban',q:"Tỷ lệ thành phần cấu tạo lý tưởng của môi trường đất là?",opts:["Khoáng 80%, Nước 20%","Khoáng 45%, Hữu cơ 5%, Nước 25%, KK 25%","Hữu cơ 50%, KK 50%","Sét 50%, Cát 50%"],ans:1,exp:"Khoáng 45%, Mùn 5%, Nước 25%, KK 25%."},
+  {id:22,diff:'nangcao',q:"Trong phẫu diện đất, tầng B có đặc điểm gì?",opts:["Nhiều mùn nhất","Chứa đá mẹ chưa phong hóa","Tầng tích tụ khoáng sét, Fe, Al bị rửa trôi","Tầng rửa trôi bề mặt"],ans:2,exp:"Tầng B là nơi lắng đọng vật chất từ tầng E (rửa trôi) xuống."},
+  {id:23,diff:'nhanthuc',q:"Đất nông nghiệp chiếm bao nhiêu % diện tích tự nhiên của VN?",opts:["10.5%","26.1%","50%","75%"],ans:1,exp:"VN có 33 tr ha tự nhiên, đất NN chiếm 8.1 tr ha (26.1%)."},
+  {id:24,diff:'coban',q:"Mất 1cm đất màu mỡ cần bao nhiêu thời gian để tự nhiên phục hồi?",opts:["1 năm","10 năm","100 năm","1000 năm"],ans:3,exp:"Đất là tài nguyên thực tế không thể tái tạo trong thời gian ngắn, mất 1000 năm cho 1cm."},
+  {id:25,diff:'nhanthuc',q:"Ô nhiễm sinh học trong đất thường do tác nhân nào?",opts:["Thuốc diệt cỏ","E.coli, Salmonella, Ký sinh trùng","Nhựa, kim loại","Rác điện tử"],ans:1,exp:"Vi khuẩn, virus, ký sinh trùng từ nước thải y tế, SH ngấm vào đất."},
+  {id:26,diff:'coban',q:"Điểm nóng ô nhiễm Dioxin/Furan lịch sử lớn nhất ở VN (đã được xử lý 2018) là ở đâu?",opts:["Làng Văn Môn","Sân bay Đà Nẵng","KCN Biên Hòa","Formosa"],ans:1,exp:"Sân bay ĐN nhiễm độc da cam, đã được xử lý bằng công nghệ phân hủy nhiệt."},
+  {id:27,diff:'nangcao',q:"Công nghệ Phytoremediation xử lý đất ô nhiễm hoạt động thế nào?",opts:["Dùng hóa chất tẩy rửa","Dùng vi khuẩn ăn dầu mỏ","Dùng thực vật (cây) hút, hấp thụ kim loại nặng từ đất","Đốt đất ở nhiệt độ cao"],ans:2,exp:"Phyto = Thực vật. Trồng cây đặc biệt để chúng hút Pb, Cd, Zn lên thân lá."},
+  {id:28,diff:'nhanthuc',q:"Làng nghề tái chế ắc quy Văn Môn (Bắc Ninh) gây ô nhiễm chất gì nguy hiểm nhất?",opts:["Nhựa vi sinh","Chì (Pb)","Khí CO","Asen"],ans:1,exp:"Đất và nước ngầm tại đây nhiễm Chì gấp 10-20 lần chuẩn, trẻ em nhiễm độc máu."},
+  {id:29,diff:'coban',q:"FAO (2024) báo cáo bao nhiêu % đất nông nghiệp toàn cầu đã bị suy thoái?",opts:["10%","33%","60%","90%"],ans:1,exp:"33% diện tích đất nông nghiệp đã thoái hóa, mất 24 tỷ tấn đất mỗi năm."},
+  {id:30,diff:'nangcao',q:"Đất ở ĐBSCL bị suy thoái, bạc màu chủ yếu do nguyên nhân nông nghiệp nào?",opts:["Phá rừng lấy gỗ","Lạm dụng phân bón vô cơ và thâm canh lúa 3 vụ liên tục","Nuôi tôm quá nhiều","Tràn dầu mỏ"],ans:1,exp:"Canh tác liên tục ko nghỉ, bón nhiều N, P làm đất chai cứng, mất mùn."},
+  {id:31,diff:'coban',q:"Công nghệ Bioremediation xử lý đất ô nhiễm dựa trên nguyên lý gì?",opts:["Thực vật hút kim loại","Vi sinh vật (nấm, vi khuẩn) phân hủy hóa chất hữu cơ/dầu mỏ","Đốt nhiệt phân","Rửa đất bằng axit"],ans:1,exp:"Bio = Vi sinh. Vi sinh vật sẽ 'ăn' và bẻ gãy các hợp chất hữu cơ độc hại."},
+  {id:32,diff:'nhanthuc',q:"Tác động cơ học nào gây ô nhiễm vật lý cho môi trường đất?",opts:["Phân đạm","Rác nhựa, nén chặt do máy móc, nhiệt độ tăng","Vi khuẩn tả","Dioxin"],ans:1,exp:"Rác màng phủ nông nghiệp, đầm nén cơ học làm mất cấu trúc đất."},
+  {id:33,diff:'coban',q:"Suy thoái đất do xói mòn (Erosion) đặc biệt nghiêm trọng ở địa hình nào của VN?",opts:["Đồng bằng sông Hồng","Đất dốc Tây Nguyên và miền núi phía Bắc sau phá rừng","Ven biển Nam Định","Nội thành Hà Nội"],ans:1,exp:"Mưa và gió cuốn trôi 50-200 tấn đất/năm/ha trên đất dốc ko có thảm thực vật."},
+  {id:34,diff:'nangcao',q:"Sa mạc hóa ở Ninh Thuận, Bình Thuận đang được khắc phục bằng biện pháp sinh học nào?",opts:["Xây tường bê tông","Phủ màng nilon","Hàng rào sinh học chắn cát di động (trồng phi lao, keo)","Tưới ngập liên tục"],ans:2,exp:"Trồng cây chịu hạn tạo hàng rào sinh học chắn cát là biện pháp chống sa mạc hóa tối ưu."},
+
+  // === PHẦN 3: BẢO VỆ ĐẤT VÀ QUẢN LÝ CTR ===
+  {id:35,diff:'coban',q:"Tỷ lệ độ che phủ rừng của VN năm 2024 đạt khoảng bao nhiêu?",opts:["20%","30%",">42%","60%"],ans:2,exp:"Nhờ các chương trình 327, 661, VN đạt tỷ lệ che phủ rừng >42%."},
+  {id:36,diff:'nangcao',q:"Cơ chế 'Làm đất tối thiểu' (Zero Tillage) mang lại lợi ích gì?",opts:["Diệt sạch cỏ dại","Giảm xáo trộn cấu trúc đất, bảo vệ giun đất và lớp mùn ẩm","Tăng sản lượng lúa gấp đôi","Giảm giá thành máy cày"],ans:1,exp:"Hạn chế cày lật giúp đất giữ nước và bảo vệ hệ vi sinh vật tự nhiên."},
+  {id:37,diff:'nhanthuc',q:"Từ 1/1/2025, rác sinh hoạt VN bắt buộc phân loại thành 3 nhóm nào?",opts:["Nhựa, Kim loại, Giấy","Tái chế, Thực phẩm (hữu cơ), Khác","Độc hại, Không độc, Y tế","Rác khô, Rác ướt, Rác nguy hại"],ans:1,exp:"Quy định tại Điều 75 Luật BVMT 2020."},
+  {id:38,diff:'coban',q:"Mô hình 5R trong quản lý CTR xếp hạng ưu tiên thứ tự nào?",opts:["Recycle > Reuse > Reduce","Refuse > Reduce > Reuse > Recycle > Recover","Recover > Recycle > Reuse > Reduce","Reduce > Recycle > Refuse > Reuse > Recover"],ans:1,exp:"Ưu tiên: Từ chối sinh rác -> Giảm thiểu -> Tái sử dụng -> Tái chế -> Đốt thu năng lượng."},
+  {id:39,diff:'nangcao',q:"Công nghệ WtE (Waste-to-Energy) xử lý rác ở nhiệt độ bao nhiêu để tránh sinh Dioxin?",opts:["200-400°C","500-700°C","850-1.200°C","2000°C"],ans:2,exp:"Nhiệt độ rất cao (850-1200 độ C) bẻ gãy Dioxin và giảm 80-90% thể tích rác."},
+  {id:40,diff:'coban',q:"Khái niệm EPR trong Luật BVMT 2020 nghĩa là gì?",opts:["Trách nhiệm mở rộng của nhà sản xuất (phải thu hồi tái chế sản phẩm)","Thuế môi trường","Phí xả thải","Đánh giá ĐTM"],ans:0,exp:"EPR bắt buộc NSX chịu trách nhiệm vòng đời sản phẩm sau khi tiêu dùng."},
+  {id:41,diff:'nhanthuc',q:"Kinh tế tuần hoàn (Circular Economy) thay thế cho mô hình kinh tế nào?",opts:["Kinh tế thị trường","Kinh tế chia sẻ","Mô hình kinh tế tuyến tính (Take - Make - Waste)","Kinh tế bao cấp"],ans:2,exp:"Biến rác của quy trình này thành nguyên liệu của quy trình khác, xóa bỏ khái niệm 'rác'."},
+  {id:42,diff:'coban',q:"Theo Bộ TNMT (2024), tỷ lệ chôn lấp chất thải rắn tại VN đang ở mức khoảng bao nhiêu phần trăm?",opts:["30%","45%","64%","80%"],ans:2,exp:"Dù giảm, chôn lấp vẫn chiếm 64%, mục tiêu 2030 là <50%."},
+  {id:43,diff:'nhanthuc',q:"Lượng rác thải sinh hoạt phát sinh mỗi ngày tại VN (2024) khoảng bao nhiêu?",opts:["10.000 tấn","35.000 tấn","68.000 tấn","100.000 tấn"],ans:2,exp:"Số liệu Bộ TNMT 2024 là 68.000 tấn/ngày."},
+  {id:44,diff:'nangcao',q:"Composting (ủ phân sinh học) là giải pháp tối ưu cho loại rác nào?",opts:["Túi nilon","Pin, ắc quy","Rác thực phẩm, tàn dư nông nghiệp (nhóm 2)","Rác điện tử"],ans:2,exp:"Tạo phân vi sinh cải tạo đất, ngăn chặn nước rỉ rác ô nhiễm từ bãi chôn lấp."},
+  {id:45,diff:'coban',q:"Biểu tượng 'Đầu lâu xương chéo' cảnh báo loại rác nào?",opts:["Rác hữu cơ","Chất thải nguy hại (độc, ăn mòn, nổ)","Rác y tế lây nhiễm","Rác tái chế"],ans:1,exp:"Dấu hiệu quốc tế cho chất thải hóa học, phóng xạ, độc tính cao."},
+  {id:46,diff:'nangcao',q:"Rác thải nhựa trên biển VN hiện đang xếp thứ mấy toàn cầu (2024)?",opts:["Top 1","Top 4","Top 10","Top 20"],ans:1,exp:"VN đứng thứ 4 TG về rác nhựa thải ra đại dương."},
+  {id:47,diff:'coban',q:"Nhựa PET, HDPE, kim loại, giấy thuộc nhóm phân loại rác nào?",opts:["Rác hữu cơ","Rác tái chế (Nhóm 1)","Rác nguy hại","Rác khác"],ans:1,exp:"Đây là nhóm có thể đưa vào kinh tế tuần hoàn."},
+  {id:48,diff:'nhanthuc',q:"Tỷ lệ thu gom rác thải đô thị của VN năm 2024 đạt mức bao nhiêu?",opts:["50%","75%","97.26%","100%"],ans:2,exp:"Thu gom đô thị đạt 97.26%, trong khi rác nông thôn chỉ ~70-75%."},
+
+  // === PHẦN 4: Ô NHIỄM NƯỚC ===
+  {id:49,diff:'nhanthuc',q:"Bao nhiêu % bề mặt Trái Đất là nước?",opts:["50%","71%","85%","99%"],ans:1,exp:"71% bề mặt TĐ là nước."},
+  {id:50,diff:'coban',q:"Tỷ lệ nước ngọt toàn cầu là 2.5%, vậy phần nước ngọt CÓ THỂ khai thác trực tiếp chiếm bao nhiêu?",opts:["2.5%","1%","0.3%","0.01%"],ans:2,exp:"Chỉ 0.3% nằm ở sông, hồ, ngầm nông. Phần còn lại đóng băng hoặc ở quá sâu."},
+  {id:51,diff:'nangcao',q:"Đặc điểm rủi ro nhất của tài nguyên nước mặt VN (830 tỷ m3) là gì?",opts:["Chỉ có ở mùa khô","63% lượng nước bắt nguồn từ ngoài lãnh thổ","90% bị nhiễm mặn","Hoàn toàn đóng băng"],ans:1,exp:"Phụ thuộc dòng chảy từ Trung Quốc, Lào, Campuchia (sông Mekong, Hồng)."},
+  {id:52,diff:'coban',q:"Trong chỉ tiêu hóa học, DO (Dissolved Oxygen) đánh giá điều gì?",opts:["Độ đục","Độ kiềm pH","Lượng oxy hòa tan trong nước","Kim loại nặng"],ans:2,exp:"DO >6mg/L là tốt, <2mg/L sinh vật thủy sinh sẽ chết ngạt."},
+  {id:53,diff:'coban',q:"BOD5 và COD cao bất thường trong nước chứng tỏ điều gì?",opts:["Nước rất tinh khiết","Nhiễm phóng xạ","Ô nhiễm chất hữu cơ nặng","Nhiễm phèn mặn"],ans:2,exp:"Vi sinh vật cần lượng lớn O2 (BOD) để phân hủy rác hữu cơ."},
+  {id:54,diff:'nhanthuc',q:"Tác nhân gây ra hội chứng trẻ em xanh xao (Methemoglobin) khi uống nước ngầm là gì?",opts:["Dioxin","Asen (Thạch tín)","Nitrat (NO3-)","Chì"],ans:2,exp:"Nitrat từ phân bón ngấm vào nước, ức chế vận chuyển O2 trong máu trẻ em."},
+  {id:55,diff:'nangcao',q:"Hiện tượng phú dưỡng hóa (Eutrophication) là do dư thừa chất nào?",opts:["Kim loại nặng","Nitơ (N) và Photpho (P)","Khí CO2","Dầu mỏ"],ans:1,exp:"N, P từ phân bón/bột giặt làm bùng phát tảo độc, hút cạn DO, tạo 'vùng chết'."},
+  {id:56,diff:'nhanthuc',q:"WHO 2023 báo cáo có bao nhiêu tỷ người trên TG chưa được tiếp cận nước sạch?",opts:["1 tỷ","2.2 tỷ","4 tỷ","5 tỷ"],ans:1,exp:"2.2 tỷ người thiếu nước sạch, 1.4 triệu trẻ em tử vong/năm do nước bẩn."},
+  {id:57,diff:'coban',q:"Thảm họa môi trường nước lớn nhất lịch sử VN năm 2016 tại 4 tỉnh miền Trung do công ty nào?",opts:["Vedan","Formosa Hà Tĩnh","Lee&Man","Miwon"],ans:1,exp:"Formosa xả phenol, xyanua làm chết 115 tấn cá."},
+  {id:58,diff:'nhanthuc',q:"Công ty Vedan từng xả thải bí mật suốt 14 năm (1994-2008) giết chết dòng sông nào?",opts:["Sông Sài Gòn","Sông Tô Lịch","Sông Thị Vải (Đồng Nai)","Sông Cầu"],ans:2,exp:"Sông Thị Vải thành dòng sông chết, BOD vượt 170 lần QCVN."},
+  {id:59,diff:'coban',q:"Số liệu Bộ TNMT 2024 cho biết chỉ bao nhiêu % nước thải đô thị VN được xử lý?",opts:["15%","45%","80%","100%"],ans:0,exp:"Khoảng 85% nước thải đô thị vẫn xả thẳng ra môi trường ko qua xử lý."},
+  {id:60,diff:'nangcao',q:"Sụt lún đất tại TP.HCM (khoảng 30mm/năm) có nguyên nhân chính là gì?",opts:["Động đất tự nhiên","Xây nhà quá cao","Khai thác nước ngầm quá mức làm mất áp lực lỗ rỗng","Biến đổi khí hậu"],ans:2,exp:"Hút nước ngầm làm rỗng túi bùn bên dưới, đất nền xẹp xuống vĩnh viễn."},
+  {id:61,diff:'coban',q:"Luật TNN 2023 (hiệu lực 1/7/2024) quy định nguyên tắc quản lý không gian nước theo:",opts:["Ranh giới hành chính tỉnh","Lưu vực sông","Quy mô dân số","Loại hình doanh nghiệp"],ans:1,exp:"Quản lý tổng hợp theo lưu vực sông để đảm bảo công bằng thượng - hạ nguồn."},
+  {id:62,diff:'nangcao',q:"Kỹ thuật tưới AWD (1 Phải 5 Giảm) cho lúa ĐBSCL nhằm mục đích gì?",opts:["Tăng nước tưới","Tưới ướt khô xen kẽ giảm 30% nước và hạn chế sinh khí Methane (CH4)","Tưới bằng nước mặn","Phun sương"],ans:1,exp:"Rút nước định kỳ phá vỡ môi trường yếm khí, ngăn vi khuẩn sinh khí CH4."},
+  {id:63,diff:'coban',q:"Năm 2019, công nghệ Nhật Bản nào thử nghiệm làm sạch sông Tô Lịch (Hà Nội)?",opts:["Bùn hoạt tính","Màng lọc RO","Nano-Bioreactor","Phun Clo"],ans:2,exp:"Dùng bọt khí Nano kích hoạt vi sinh vật bản địa phân hủy bùn đáy."},
+  {id:64,diff:'nangcao',q:"Trong XLNT, công nghệ MBR là sự kết hợp của:",opts:["Vi sinh (Bùn hoạt tính) và Màng lọc vật lý siêu lọc","Keo tụ và Tạo bông","Tuyển nổi và Sục ozone","Cát và Sỏi"],ans:0,exp:"MBR (Membrane Bioreactor) lọc sạch bùn và vi khuẩn bằng màng kích thước nano/micro."},
+  {id:65,diff:'nhanthuc',q:"Chỉ số đo lường vi khuẩn phân trong nước là gì?",opts:["BOD","DO","Coliform, E.coli","TSS"],ans:2,exp:"Coliform và E.coli là sinh vật chỉ thị cho thấy nước bị nhiễm phân người/động vật."},
+  {id:66,diff:'coban',q:"Mục tiêu 2030 (QĐ 658), bao nhiêu % đô thị loại III trở lên phải có hệ thống XLNT?",opts:["50%","75%","100%","Không bắt buộc"],ans:2,exp:"Mục tiêu 100% đô thị loại III trở lên phải thu gom và xử lý nước thải."},
+  {id:67,diff:'nangcao',q:"Xâm nhập mặn ĐBSCL tồi tệ hơn do sự cộng hưởng của BĐKH, Sụt lún và yếu tố nào?",opts:["Trồng quá nhiều lúa","Đập thủy điện thượng nguồn Mekong chặn nước ngọt xả xuống","Mưa quá nhiều","Xây cầu quá nhiều"],ans:1,exp:"Thượng nguồn tích nước mùa khô làm ĐBSCL thiếu sức đẩy nước mặn ra biển."},
+  {id:68,diff:'nhanthuc',q:"Sông Thames (London) phục hồi từ dòng sông chết nhờ bài học nào?",opts:["Đổ hóa chất khử mùi","Quyết tâm chính trị và đầu tư $2 tỷ hệ thống thoát nước suốt 50 năm","Lấp sông xây đường","Nhờ tự nhiên mưa nhiều"],ans:1,exp:"Phục hồi sông cần đầu tư lớn, tách biệt nước thải và kiên trì hàng chục năm."},
+  {id:69,diff:'coban',q:"Công nghệ Phytoremediation trong môi trường nước dùng gì để lọc nước?",opts:["Lưới thép","Cây thủy sinh (bèo, lau sậy) ngập nước nhân tạo (Constructed Wetlands)","Bơm cao áp","Tia cực tím"],ans:1,exp:"Đất ngập nước nhân tạo dùng thực vật thủy sinh hút N, P và kim loại nặng."},
+
+  // === PHẦN 5: Ô NHIỄM KHÔNG KHÍ ===
+  {id:70,diff:'nhanthuc',q:"Khí quyển Trái Đất có 5 tầng. Tầng nào diễn ra ô nhiễm và các hiện tượng thời tiết?",opts:["Tầng bình lưu","Tầng đối lưu (0-12km)","Tầng trung lưu","Tầng ngoại quyển"],ans:1,exp:"Troposphere chứa 75% khối lượng khí quyển và mây, mưa, khói bụi."},
+  {id:71,diff:'coban',q:"Thành phần không khí sạch tự nhiên (theo % thể tích) gồm:",opts:["O2 78%, N2 21%","N2 78.09%, O2 20.95%, Ar 0.93%, CO2 0.041%","CO2 50%, O2 50%","N2 90%, O2 10%"],ans:1,exp:"Khí N2 chiếm đa số, CO2 tự nhiên chỉ 0.041%."},
+  {id:72,diff:'nangcao',q:"Mưa axit (Acid Rain) có độ pH dưới 5.6 do khí nào phản ứng với hơi nước?",opts:["CO và CFC","SO2 và NOx","O3 và CH4","VOCs và Pb"],ans:1,exp:"SO2 và NOx sinh ra H2SO4 và HNO3 ăn mòn đá vôi, chết rừng (nguồn: điện than, xe cộ)."},
+  {id:73,diff:'nhanthuc',q:"Chất ô nhiễm nào nguy hiểm nhất vì có thể xuyên phế nang, đi thẳng vào máu?",opts:["Bụi thô PM10","Khí CO","Ozone mặt đất","Bụi mịn PM2.5"],ans:3,exp:"PM2.5 cực nhỏ (<2.5 micromet) mang theo kim loại nặng vào hệ tuần hoàn gây đột quỵ."},
+  {id:74,diff:'coban',q:"Khí CO (Carbon Monoxit) gây ngạt thở tử vong qua cơ chế y khoa nào?",opts:["Ăn mòn phối","Gắn với Hemoglobin (HbCO) chiếm chỗ của Oxy trong máu","Tạo ra axit trong dạ dày","Xúc tác tạo cục máu đông"],ans:1,exp:"CO có ái lực với máu gấp 200 lần O2, làm não và tim thiếu O2 nghiêm trọng."},
+  {id:75,diff:'nangcao',q:"Khói quang hóa (Photochemical Smog) hình thành thế nào?",opts:["Đốt rơm rạ mùa đông","NOx + VOCs + bức xạ tia UV mặt trời sinh ra Ozone (O3) mặt đất","Bụi than + Hơi nước","Khí CO2 + CFC"],ans:1,exp:"Xảy ra vào buổi trưa nắng gắt ở đô thị, gây cay mắt, rát họng (VD điển hình: Los Angeles)."},
+  {id:76,diff:'nhanthuc',q:"Năm 2024, PM2.5 tại VN vượt tiêu chuẩn của WHO (5 µg/m³) bao nhiêu lần?",opts:["1.5 lần","3 lần","5.7 lần","10 lần"],ans:2,exp:"IQAir 2024 ghi nhận PM2.5 tại VN cao gấp 5.7 lần mức an toàn WHO."},
+  {id:77,diff:'coban',q:"Chỉ số AQI màu Tím (>200) biểu thị điều gì?",opts:["Tốt","Trung bình","Rất Xấu - Báo động sức khỏe nghiêm trọng","Không khí vô trùng"],ans:2,exp:"AQI 201-300 yêu cầu toàn bộ dân số hạn chế ra ngoài."},
+  {id:78,diff:'nangcao',q:"Hiện tượng 'Nghịch nhiệt' (Inversion) mùa Đông-Xuân miền Bắc gây hậu quả gì?",opts:["Làm trời nắng ấm","Lớp khí lạnh sát đất bị lớp khí nóng đè lên, nhốt chặt khói bụi PM2.5 ko cho phát tán","Tạo mưa bão lớn","Sinh ra lốc xoáy"],ans:1,exp:"Tạo thành 'cái nắp nồi' tự nhiên làm AQI Hà Nội chạm mức Tím/Nâu kéo dài."},
+  {id:79,diff:'coban',q:"Lỗ thủng tầng Ozon ở Nam Cực hình thành do hóa chất nào?",opts:["CO2","SO2","CFC, HCFC (từ điều hòa, tủ lạnh)","CH4"],ans:2,exp:"Khí sinh hàn giải phóng Clo phá vỡ cấu trúc O3 tầng bình lưu."},
+  {id:80,diff:'nhanthuc',q:"Nghị định thư nào (1987) đã thành công cứu tầng Ozon?",opts:["Kyoto","Paris","Montreal","Stockholm"],ans:2,exp:"Nghị định thư Montreal cấm CFC toàn cầu, là hiệp ước MT thành công nhất lịch sử."},
+  {id:81,diff:'nangcao',q:"Khí N2O (Khí cười) phát sinh từ đâu gây hiệu ứng nhà kính mạnh gấp 300 lần CO2?",opts:["Khí xả xe điện","Bãi chôn lấp rác","Lạm dụng phân bón đạm (Nitơ) dư thừa trong nông nghiệp","Bình chữa cháy"],ans:2,exp:"Phân Ure ko được cây hấp thụ hết bị vi khuẩn chuyển hóa thành N2O bay lên."},
+  {id:82,diff:'coban',q:"Theo phân tích nguồn phát thải tại Hà Nội, nguồn nào sinh ra PM2.5 lớn nhất (29%)?",opts:["Giao thông","Sinh hoạt đun nấu","Công nghiệp & Nhiệt điện than (lan truyền)","Xây dựng"],ans:2,exp:"Nhiệt điện than và KCN xung quanh đồng bằng Bắc Bộ lan khói về Hà Nội."},
+  {id:83,diff:'nhanthuc',q:"Tháng 5-6 và 10-11, ô nhiễm bụi mịn miền Bắc tăng vọt 4 lần do thói quen nào?",opts:["Đốt pháo","Đốt rơm rạ ngoài đồng ruộng bột phát","Chạy máy phát điện","Nướng thịt vỉa hè"],ans:1,exp:"Vụ Hè Thu 2024 đốt rơm rạ tăng 43.2% làm AQI tăng vọt cấp tính."},
+  {id:84,diff:'coban',q:"WHO công bố Ô nhiễm KK giết chết bao nhiêu người mỗi năm?",opts:["1 triệu","3 triệu","7 triệu","10 triệu"],ans:2,exp:"7 triệu ca tử vong/năm (nhiều hơn AIDS, lao, sốt rét cộng lại)."},
+  {id:85,diff:'nangcao',q:"Hệ thống CEMS bắt buộc lắp ở các nhà máy xi măng, nhiệt điện là gì?",opts:["Lọc tĩnh điện","Hệ thống quan trắc khí thải tự động liên tục (24/7) truyền về Sở TNMT","Mô hình dự báo khí tượng","Chuẩn Euro 5"],ans:1,exp:"CEMS giúp giám sát chặt chẽ, chống xả trộm khí SO2, NOx, Bụi vào ban đêm."},
+  {id:86,diff:'nhanthuc',q:"Quyết định 876 của Chính phủ yêu cầu 100% xe buýt, taxi HN, HCM điện hóa trước năm nào?",opts:["2025","2030","2040","2050"],ans:1,exp:"Lộ trình GTVT xanh bắt buộc GTCC dùng điện/NL xanh 100% vào 2030."},
+  {id:87,diff:'coban',q:"Chất độc VOCs (Hợp chất hữu cơ bay hơi) sinh ra từ đâu?",opts:["Đốt rác","Phân bón","Dung môi, sơn, xăng dầu bốc hơi","Bụi đường"],ans:2,exp:"Benzen trong VOCs gây ung thư, là tiền chất sinh ra sương mù quang hóa."},
+  {id:88,diff:'nangcao',q:"Để lọc khí SO2 (khử lưu huỳnh) trong nhà máy nhiệt điện, người ta dùng công nghệ gì?",opts:["Túi lọc vải","Lọc tĩnh điện (ESP)","Scrubber hấp thụ ướt","Xyclon"],ans:2,exp:"Scrubber dùng dung dịch kiềm (như nước vôi) phun mù để hấp thụ SO2."},
+  {id:89,diff:'coban',q:"Giao thông đóng góp bao nhiêu % bụi đô thị tại VN?",opts:["20-30%","60-70%","80-90%","10%"],ans:1,exp:"Với 70 tr xe máy và 5.3 tr oto, GTVT xả 60-70% bụi và CO vào vùng nội đô."},
+
+  // === PHẦN 6: NĂNG LƯỢNG VÀ PTBV ===
+  {id:90,diff:'nhanthuc',q:"NLTT và Năng lượng sạch khác nhau thế nào?",opts:["Là một","NLTT đắt hơn","NLTT vô hạn tự phục hồi. NL Sạch là ít phát thải (bao gồm cả điện hạt nhân)","NL Sạch là mặt trời, NLTT là than"],ans:2,exp:"Điện hạt nhân là NL Sạch (ko phát CO2) nhưng KHÔNG tái tạo (dùng Urani)."},
+  {id:91,diff:'coban',q:"Mục tiêu Quy hoạch Điện VIII, Năng lượng tái tạo chiếm bao nhiêu % vào 2050 để đạt Net-Zero?",opts:["30%","50%","74-75%","100%"],ans:2,exp:"Đến 2050, 74-75% điện năng VN phải đến từ Gió, Mặt trời, Thủy điện, Sinh khối."},
+  {id:92,diff:'nangcao',q:"Khái niệm 'Negawatt' trong tiết kiệm năng lượng nghĩa là gì?",opts:["Điện gió ngoài khơi","1 MW điện tiêu hao do truyền tải","1 MW điện không cần sản xuất ra nhờ các biện pháp tiết kiệm/hiệu quả năng lượng","Điện hạt nhân"],ans:2,exp:"Tiết kiệm 1MW rẻ và sạch hơn nhiều so với việc xây nhà máy sản xuất ra 1MW."},
+  {id:93,diff:'coban',q:"Hệ số phát thải điện VN 2024 là 0.68 tCO2/MWh. Nó có ý nghĩa gì?",opts:["Mỗi người thở ra 0.68 tấn CO2","Tiết kiệm 1 kWh điện sẽ giảm phát thải 0.68 kg CO2","Đốt 1 kg than sinh 0.68 kg CO2","Mỗi xe máy xả 0.68 tấn"],ans:1,exp:"0.68 tCO2/MWh = 0.68 kgCO2/kWh. Tắt 1 máy lạnh tiết kiệm 1kWh = bớt xả 0.68kg KNK."},
+  {id:94,diff:'nhanthuc',q:"Việt Nam đang đứng số 1 Đông Nam Á (2024) về công suất nguồn điện nào (~18.5 GWp)?",opts:["Điện hạt nhân","Điện gió","Điện mặt trời","Thủy triều"],ans:2,exp:"ĐMT bùng nổ, đặc biệt ĐMT áp mái và các dự án Dầu Tiếng, Phước Minh."},
+  {id:95,diff:'coban',q:"Điện Nhiệt điện than hiện (2024) chiếm tỷ trọng bao nhiêu sản lượng điện VN?",opts:["10%","25%","49.5%","70%"],ans:2,exp:"Điện than vẫn đang chiếm gần một nửa (49.5%) nhưng sẽ bị loại bỏ dần theo lộ trình."},
+  {id:96,diff:'nangcao',q:"Nhược điểm cốt tử của Năng lượng Gió và Mặt trời đối với lưới điện là gì?",opts:["Phát thải độc hại","Giá quá đắt","Tính gián đoạn, phụ thuộc thời tiết (đêm, gió lặng) gây bất ổn lưới điện","Tốn nước làm mát"],ans:2,exp:"Đòi hỏi phải có hệ thống lưu trữ Pin (BESS) hoặc điện khí linh hoạt để chạy nền."},
+  {id:97,diff:'nhanthuc',q:"Thiết bị VFD (Biến tần) trong công nghiệp giúp gì cho môi trường?",opts:["Lọc nước thải","Hút bụi PM10","Điều chỉnh tốc độ động cơ theo nhu cầu thực tế, tiết kiệm 20-50% điện","Tạo ra điện mặt trời"],ans:2,exp:"Giải pháp Hiệu quả năng lượng (EE) số 1 trong nhà máy."},
+  {id:98,diff:'coban',q:"Cơ chế DPPA (Thỏa thuận mua bán điện trực tiếp) áp dụng 2025 cho đối tượng nào?",opts:["Hộ gia đình","Doanh nghiệp lớn (>1 tr kWh/năm) được mua trực tiếp điện NLTT từ nhà SX để đạt chuẩn ESG","Trường học","Quán ăn"],ans:1,exp:"Giúp các tập đoàn FDI, DN xuất khẩu dùng 100% điện xanh đáp ứng CBAM EU."},
+  {id:99,diff:'nangcao',q:"Thị trường Tín chỉ Carbon VN (vận hành 2028) dựa trên nguyên lý nào?",opts:["Nguyên tắc phòng ngừa","Người gây ô nhiễm phải trả tiền (PPP) dưới dạng Hạn ngạch & Giao dịch (Cap & Trade)","Cấm tuyệt đối xả thải","Phạt tù"],ans:1,exp:"Nhà nước cấp hạn ngạch. Xả lố phải mua tín chỉ. Trồng rừng/NLTT dư tín chỉ đem bán."},
+  {id:100,diff:'nhanthuc',q:"Đèn LED được gọi là giải pháp Hiệu quả năng lượng vì sao?",opts:["Nó làm từ giấy tái chế","Nó tự phát điện","Dùng ít điện hơn 75-85% so với đèn sợi đốt mà vẫn cho cường độ sáng tương đương","Nó rẻ nhất"],ans:2,exp:"Đạt cùng đầu ra (Lumen) nhưng tiêu thụ đầu vào (Watt) cực thấp."},
+  {id:101,diff:'coban',q:"Chứng chỉ LOTUS và LEED cấp cho lĩnh vực nào?",opts:["Giao thông xanh","Thủy sản hữu cơ","Tòa nhà xanh (Green Building) thiết kế tiết kiệm điện, nước","Kiểm định xe cũ"],ans:2,exp:"Tiêu chuẩn đánh giá Tòa nhà xanh của VN (LOTUS) và Mỹ (LEED)."},
+  {id:102,diff:'nangcao',q:"Mục tiêu 2030 của QH Điện VIII về ĐMT mái nhà tự sản tự tiêu là?",opts:["10% nhà dân","30% công sở","50% nhà dân và 50% công sở","100% toàn quốc"],ans:2,exp:"Tham vọng phủ 50% mái nhà bằng pin mặt trời giảm tải lưới điện EVN."},
+  {id:103,diff:'nhanthuc',q:"SDG số 7 trong Agenda 2030 nhấn mạnh điều gì?",opts:["Xóa nghèo","Giáo dục","Đảm bảo tiếp cận năng lượng sạch, giá hợp lý, bền vững cho mọi người","Bảo vệ đại dương"],ans:2,exp:"Năng lượng sạch là chìa khóa để phát triển kinh tế và giảm BĐKH."},
+  {id:104,diff:'coban',q:"Sinh khối (Biomass) phát điện ở VN lấy từ nguồn nào chủ yếu?",opts:["Khai thác gỗ rừng nguyên sinh","Tận dụng phế thải nông nghiệp (Bã mía, trấu, mùn cưa) và rác đô thị","Nhập khẩu than sinh học","Rong biển"],ans:1,exp:"Vừa phát điện ổn định 24/7, vừa giải quyết lượng rác thải nông nghiệp/đô thị khổng lồ."},
+  {id:105,diff:'nangcao',q:"Hydrogen xanh (Tương lai của năng lượng) được sản xuất bằng cách nào?",opts:["Đốt than lấy khí","Dùng điện tái tạo dư thừa điện phân nước (H2O) tách lấy khí H2 để lưu trữ","Khai thác từ giếng ngầm","Trộn xăng với cồn"],ans:1,exp:"Giải pháp lưu trữ điện gió/mặt trời dư thừa thành nhiên liệu khí H2 ko phát thải."},
+
+  // === BỔ SUNG CÁC CÂU SÂU VÀ CHI TIẾT HƠN ===
+  {id:106,diff:'nhanthuc',q:"Chỉ số đo lường WQI là gì?",opts:["Chỉ số tia UV","Chỉ số chất lượng nước (Water Quality Index) tổng hợp","Chỉ số lạm phát","Tốc độ gió"],ans:1,exp:"Gộp nhiều thông số (DO, BOD, pH...) thành 1 điểm số 0-100 để dân dễ hiểu."},
+  {id:107,diff:'coban',q:"Khí nhà kính (GHG) nào giữ nhiệt độ TĐ ở mức +15°C tự nhiên?",opts:["O2, N2","CO2, H2O, CH4","Argon, Heli","Ozone tầng bình lưu"],ans:1,exp:"Nhờ HNK tự nhiên, TĐ ko bị đóng băng ở -18°C. Nhưng con người xả quá nhiều làm nó nóng lên."},
+  {id:108,diff:'nangcao',q:"Chương trình phục hồi sông Thames (Anh) thành công nhờ yếu tố tiên quyết nào?",opts:["Che đậy mặt sông","Tách biệt hệ thống thoát nước mưa và nước thải, xây trạm XLNT quy mô lớn","Đổ hóa chất Javel","Cấm tàu thuyền"],ans:1,exp:"Hệ thống cống ngầm khổng lồ ngăn nước thải sinh hoạt đổ trực tiếp ra sông."},
+  {id:109,diff:'nhanthuc',q:"Tầng khí quyển nào bảo vệ TĐ khỏi thiên thạch nhỏ?",opts:["Đối lưu","Bình lưu","Trung lưu (Mesosphere)","Ngoại quyển"],ans:2,exp:"Thiên thạch bốc cháy ở tầng này do ma sát (-90°C)."},
+  {id:110,diff:'coban',q:"Vùng phát thải thấp (LEZ) trong quản lý đô thị là gì?",opts:["Vùng ko có nhà máy","Khu vực hạn chế xe cá nhân cũ, xe xăng/diesel xả thải cao đi vào giờ cao điểm","Vùng cấm hút thuốc","Khu CN sinh thái"],ans:1,exp:"Giải pháp ép dân chuyển sang xe điện hoặc phương tiện công cộng (London, Bắc Kinh áp dụng)."},
+  {id:111,diff:'nangcao',q:"QCVN 08:2023/BTNMT phân chia chất lượng nước mặt để làm gì?",opts:["Quy định giá bán nước","Đánh giá chất lượng nước phù hợp với các mục đích: sinh hoạt, bơi lội, thủy sản, giao thông","Cấm bơi lội toàn quốc","Làm thủy điện"],ans:1,exp:"Nước phải đạt cấp A mới được dùng cấp sinh hoạt, cấp thấp hơn chỉ cho tưới tiêu, giao thông."},
+  {id:112,diff:'nhanthuc',q:"Mất đa dạng sinh học (Extinction) thuộc vào loại giới hạn nào?",opts:["Giới hạn XH","Giới hạn Hành tinh (Planetary Boundaries)","Giới hạn kinh tế","Giới hạn quốc gia"],ans:1,exp:"Là 1 trong 9 ranh giới đỏ nhân loại đang vượt qua mức nguy hiểm."},
+  {id:113,diff:'coban',q:"Tính 'liên kết hệ thống' của tài nguyên thiên nhiên nghĩa là?",opts:["Đều là chất rắn","Tác động lên 1 yếu tố (VD: chặt rừng) sẽ kéo theo phản ứng dây chuyền (xói mòn đất, cạn nước ngầm)","Chỉ liên kết qua mạng internet","Có giá trị bằng tiền"],ans:1,exp:"Hệ sinh thái là một mạng lưới, ko thể phá hủy 1 phần mà phần khác an toàn."},
+  {id:114,diff:'nangcao',q:"Khi xử lý rác y tế (kim tiêm, bệnh phẩm lây nhiễm), công nghệ nào bắt buộc?",opts:["Ủ phân compost","Chôn lấp trực tiếp","Khử trùng mạnh (Vi sóng, Hấp ướt Autoclave) hoặc Đốt nhiệt độ cực cao","Tái chế thành đồ chơi"],ans:2,exp:"Đảm bảo tiêu diệt 100% mầm bệnh, virus, vi khuẩn kháng thuốc."},
+  {id:115,diff:'nhanthuc',q:"Năm 2024, tỷ lệ người dùng bếp than, củi nhiên liệu rắn gây khói ở VN là bao nhiêu?",opts:["1%","17%","50%","80%"],ans:1,exp:"Sinh hoạt dân sinh vẫn chiếm 17% phát thải PM2.5 ở khu vực nông thôn, ven đô."},
+  {id:116,diff:'coban',q:"Công nghệ đệm sinh học (MBR, SBR) dùng vi sinh vật (bùn hoạt tính) để XLNT nhằm mục đích ăn chất gì?",opts:["Túi nilon","Sắt thép","Chất hữu cơ (BOD/COD) hòa tan trong nước","Bùn đất vô cơ"],ans:2,exp:"Vi sinh vật phân hủy chất hữu cơ thành CO2 và nước, làm trong nước thải."},
+  {id:117,diff:'nangcao',q:"Dự án kênh Nhiêu Lộc - Thị Nghè (TP.HCM) là ví dụ điển hình về?",opts:["Xây thủy điện đô thị","Chôn lấp rác","Phục hồi dòng sông nội đô ô nhiễm thành công (nạo vét bùn, làm cống bao)","Phá bỏ hoàn toàn"],ans:2,exp:"Tương tự Cheonggyecheon, TP.HCM đã hồi sinh con kênh đen hôi thối thành cảnh quan xanh."},
+  {id:118,diff:'nhanthuc',q:"Chiến lược tăng trưởng xanh của VN ưu tiên mô hình nào?",opts:["Kinh tế nâu","Kinh tế tuyến tính","Kinh tế xanh và Tuần hoàn","Kinh tế bao cấp"],ans:2,exp:"Kết nối giảm phát thải với tăng trưởng kinh tế bền vững."},
+  {id:119,diff:'coban',q:"ISO 14001 là tiêu chuẩn quốc tế về gì?",opts:["Chất lượng sản phẩm","An toàn thực phẩm","Hệ thống Quản lý Môi trường cho doanh nghiệp","Bảo mật thông tin"],ans:2,exp:"Giúp DN chuẩn hóa quy trình giảm xả thải, tiết kiệm tài nguyên."},
+  {id:120,diff:'nangcao',q:"Mô hình Đô thị thông minh (Smart City) áp dụng IoT để bảo vệ MT KK thế nào?",opts:["Tự động phạt xe máy","Lắp mạng lưới cảm biến (sensor) phân tích, dự báo AQI thời gian thực và cảnh báo người dân","Phun sương toàn thành phố","Xây vòm kính trùm đô thị"],ans:1,exp:"Dữ liệu lớn (Big Data) giúp điều phối giao thông, cảnh báo điểm nóng ô nhiễm."},
+  {id:121,diff:'nhanthuc',q:"Chất khí CFC phá hủy tầng Ozon có nguồn gốc chính từ đâu?",opts:["Ống xả xe máy","Gas máy lạnh, bình xịt, xốp cách nhiệt","Trạm xăng","Lò gạch"],ans:1,exp:"Dù đã bị cấm bởi NĐT Montreal, sự tồn lưu của CFC trên tầng cao vẫn mất hàng chục năm để biến mất."},
+  {id:122,diff:'coban',q:"Khí nhà kính Methane (CH4) phát thải nhiều nhất từ ngành nào tại VN?",opts:["Dệt may","Điện hạt nhân","Nông nghiệp (Trồng lúa nước yếm khí và Chăn nuôi gia súc)","Sản xuất xi măng"],ans:2,exp:"Dạ dày bò, lợn và bùn lúa nước sinh ra lượng CH4 khổng lồ, mạnh gấp 28 lần CO2."},
+  {id:123,diff:'nangcao',q:"Phương pháp 'Lưu trữ Carbon' (CCS) tại các nhà máy nhiệt điện than là gì?",opts:["Trồng 1 cái cây cạnh nhà máy","Hút CO2 từ ống khói, nén lại thành chất lỏng và bơm chôn sâu dưới lòng đất/đáy biển vĩnh viễn","Đóng gói CO2 thành đá khô bán","Biến CO2 thành oxy"],ans:1,exp:"Công nghệ phức tạp, đắt tiền giúp than thành 'than sạch', ngăn KNK lên khí quyển."},
+  {id:124,diff:'nhanthuc',q:"Ranh giới không gian Karman nằm cách mặt đất bao xa?",opts:["10km","50km","100km","700km"],ans:2,exp:"Mốc 100km là đường ranh giới pháp lý và vật lý giữa khí quyển TĐ và vũ trụ."},
+  {id:125,diff:'coban',q:"Vật liệu hữu cơ (Mulching) phủ trên mặt đất trồng trọt có tác dụng gì?",opts:["Làm đẹp","Giữ ẩm bề mặt, chống bốc hơi nước và chống xói mòn do gió/mưa","Làm màng nilon độc hại","Chắn tia X"],ans:1,exp:"Rơm rạ, xác lá rụng tàn dư được giữ lại che chắn bảo vệ cấu trúc lớp đất mặt."},
+  {id:126,diff:'nangcao',q:"ISO 50001 là tiêu chuẩn liên quan đến khía cạnh nào?",opts:["Vệ sinh dịch tễ","Quản lý năng lượng (Energy Management System)","Trách nhiệm xã hội","Chất lượng nước sinh hoạt"],ans:1,exp:"Yêu cầu DN liên tục cải tiến hiệu quả dùng điện, nhiệt, hơi nước."},
+  {id:127,diff:'nhanthuc',q:"Hệ sinh thái Đất ngập nước quan trọng nhất VN được bảo vệ quốc tế gọi là gì?",opts:["Di sản UNESCO","Khu Ramsar","Vườn quốc gia","Khu bảo tồn biển"],ans:1,exp:"VN có 9 khu Ramsar (Tràm Chim, Xuân Thủy, Côn Đảo...) có giá trị ĐDSH lọc nước cực cao."},
+  {id:128,diff:'coban',q:"Để đo độ đục của nước (Chất rắn lơ lửng - TSS), người ta dùng đơn vị nào?",opts:["pH","NTU","mg/L","Celsius"],ans:1,exp:"NTU (Nephelometric Turbidity Unit) phản ánh độ trong suốt, ảnh hưởng khả năng quang hợp của tảo."},
+  {id:129,diff:'nangcao',q:"Tái nạp nhân tạo tầng nước ngầm (MAR) ứng phó với sụt lún đô thị bằng cách nào?",opts:["Bơm hóa chất làm cứng đất","Thu gom nước mưa sạch mùa lũ, bơm ép ngược trở lại xuống tầng ngầm sâu để phục hồi áp lực lỗ rỗng","Hút hết nước ngầm ra","Đóng cọc bê tông"],ans:1,exp:"Giải pháp kỹ thuật bù đắp lượng nước ngầm đã khai thác, ngăn chặn sụt lún mặt đất đô thị."},
+  {id:130,diff:'nhanthuc',q:"Tác động của hạt vi nhựa (Microplastic) khi chôn lấp và trôi ra biển là gì?",opts:["Làm thức ăn tốt cho cá","Tích lũy sinh học độc tố đi vào chuỗi thức ăn (hải sản -> người)","Phân hủy thành phân bón","Làm trong nước biển"],ans:1,exp:"Hạt nhựa ngậm hóa chất độc, cá ăn vào, con người ăn cá sẽ bị ung thư, đột biến."},
+  {id:131,diff:'coban',q:"Giáo dục vì sự PTBV (ESD) nằm trong nguyên tắc cốt lõi thứ mấy?",opts:["Nguyên tắc 1","Nguyên tắc phòng ngừa","Nguyên tắc 7 (Giáo dục và nâng cao nhận thức)","Nguyên tắc 9"],ans:2,exp:"Giáo dục lồng ghép mọi cấp học để thay đổi hành vi tiêu dùng xanh của thế hệ trẻ."},
+  {id:132,diff:'nangcao',q:"'Vùng chết' (Dead Zone) tại các cửa sông/biển được định nghĩa như thế nào?",opts:["Vùng ko có tàu thuyền","Vùng đáy nước bị cạn kiệt toàn bộ Oxy hòa tan (DO < 2mg/L) do tảo chết phân hủy, ko sinh vật nào sống nổi","Vùng nước đóng băng","Vùng bị nổ hạt nhân"],ans:1,exp:"Hệ quả cuối cùng của Phú dưỡng hóa do xả trôi phân đạm, lân từ đất nông nghiệp đổ ra biển."},
+  {id:133,diff:'nhanthuc',q:"'Bình đẳng giới' thuộc trụ cột nào của PTBV?",opts:["Kinh tế","Môi trường","Xã hội","Tự nhiên"],ans:2,exp:"Đảm bảo quyền con người, không phân biệt đối xử là lõi của Trụ cột Xã hội."},
+  {id:134,diff:'coban',q:"Việc thay thế xe xăng bằng xe điện (EV) giải quyết vấn đề ô nhiễm nào tại nguồn?",opts:["Giảm rác thải nhựa","Giảm tiếng ồn và phát thải khí xả (NOx, CO, Bụi) trực tiếp trên đường phố","Giảm ô nhiễm phóng xạ","Giảm ách tắc giao thông"],ans:1,exp:"EV xả thải 0% tại đuôi xe, chuyển điểm ô nhiễm về nhà máy điện (dễ kiểm soát tập trung hơn)."},
+  {id:135,diff:'nangcao',q:"'Quyền tiếp cận công lý môi trường' (Nguyên tắc 8) bảo vệ đối tượng nào?",opts:["Chỉ doanh nghiệp lớn","Người dân, cộng đồng bản địa, nhóm dễ tổn thương được tham gia ra quyết định và khiếu kiện khi bị MT xâm hại","Chỉ chính phủ","Người nước ngoài"],ans:1,exp:"Đảm bảo sự minh bạch và dân chủ sinh thái, tiếng nói của người nghèo phải được lắng nghe."},
+  {id:136,diff:'nhanthuc',q:"Quang điện (PV - Photovoltaic) của tấm pin mặt trời hoạt động thế nào?",opts:["Đun sôi nước","Tế bào bán dẫn hấp thụ photon ánh sáng tạo ra trực tiếp điện một chiều (DC)","Quay turbine gió","Hấp thụ nhiệt sưởi ấm"],ans:1,exp:"Dòng điện một chiều DC sau đó qua Inverter biến thành điện xoay chiều AC hòa lưới."},
+  {id:137,diff:'coban',q:"Lượng mưa trung bình tại VN là bao nhiêu, cho thấy tiềm năng nước rất lớn?",opts:["500-1000 mm/năm","1800-2000 mm/năm (Cao hơn TG)","3000-4000 mm/năm","< 200 mm/năm"],ans:1,exp:"Lượng mưa lớn nhưng phân bố ko đều (75% trút vào 3 tháng mùa lũ) gây nghịch lý lũ - hạn."},
+  {id:138,diff:'nangcao',q:"Mô hình lúa-tôm tại Cà Mau là điển hình cho giải pháp bảo vệ MT nào?",opts:["Dùng thuốc nổ bắt cá","Canh tác sinh thái kết hợp, dựa vào tự nhiên để giảm phân bón hóa học và làm sạch nước","Trồng lúa trên sa mạc","Đốt đồng"],ans:1,exp:"Gốc rạ làm thức ăn cho tôm, phân tôm bón lại cho lúa. Vòng tuần hoàn khép kín siêu bền vững."},
+  {id:139,diff:'nhanthuc',q:"Định giá tài nguyên đúng và nội hóa chi phí MT là để đạt được điểm giao thoa nào?",opts:["Bền chịu (XH x MT)","Công bằng (KT x XH)","Khả thi (KT x MT)","Thịnh vượng"],ans:2,exp:"Đưa chi phí dọn rác vào giá bán sản phẩm (EPR, Thuế Carbon) giúp nền KT Khả thi trong giới hạn sinh thái."},
+  {id:140,diff:'coban',q:"Chất rắn lơ lửng (TSS) gây hại gì cho sinh vật thủy sinh?",opts:["Tăng O2","Giảm độ đục","Cản trở ánh sáng đâm xuyên, làm giảm quang hợp của tảo và lấp tắc mang cá","Làm nước ngọt hơn"],ans:2,exp:"Bùn đất công trình xả xuống sông làm sinh vật mù hướng, ngạt thở, hệ sinh thái đáy bị chôn vùi."},
+  {id:141,diff:'nangcao',q:"Đồng hồ thông minh (Smart Meter) và TOU Pricing (Giá điện theo thời gian) giúp lưới điện bảo vệ MT thế nào?",opts:["Báo thức giờ ngủ","Khuyến khích dịch chuyển phụ tải (Demand Side Mgt): người dân giặt giũ/sạc xe vào giờ thấp điểm, giảm công suất đỉnh, tránh phải xây thêm nhiệt điện than","Chống sét","Phát wifi"],ans:1,exp:"Giá điện rẻ vào ban đêm ép nhu cầu san phẳng 24h, giúp tích hợp tốt năng lượng gió (thường mạnh về đêm)."},
+  {id:142,diff:'nhanthuc',q:"Dự án nhà máy điện mặt trời áp mái tự sản tự tiêu có lợi ích gì lớn nhất cho đất đai?",opts:["Chống mưa dột","Tạo ra bóng râm mát mẻ","Không cần đền bù, không chiếm dụng quỹ đất nông nghiệp (như các đại dự án trên mặt đất)","Chống trộm"],ans:2,exp:"Tận dụng mái xưởng KCN, mái nhà dân sinh, vừa làm mát nhà, vừa giải quyết 100% rào cản tốn đất."},
+  {id:143,diff:'coban',q:"Chỉ số VN_AQI khác tiêu chuẩn Mỹ (US-AQI) ở điểm nào?",opts:["Đo bằng màu đen trắng","Được Bộ TNMT tính toán dựa trên điều kiện nền đặc thù của Việt Nam (QCVN 05)","Đo từ không gian","Dùng cho nước ngầm"],ans:1,exp:"Tuy cùng mốc 0-500 và màu sắc, công thức tính và ngưỡng nồng độ phạt của VN_AQI sát với sức chịu đựng của người Việt hơn."},
+  {id:144,diff:'nangcao',q:"Mạng lưới 3.000+ cảm biến chất lượng không khí giá rẻ (như PAM Air) đóng vai trò gì?",opts:["Thay thế trạm chuẩn quốc gia","Phủ sóng wifi","Cung cấp dữ liệu vi mô (cấp khu phố), nâng cao nhận thức cộng đồng dù độ chính xác thấp hơn trạm chuẩn Bộ TNMT","Phun sương tự động"],ans:2,exp:"Dữ liệu cộng đồng (Crowdsourcing) tạo áp lực minh bạch, giúp người dân tự bảo vệ mình trước khi có dự báo chính thức."},
+  {id:145,diff:'nhanthuc',q:"Câu nói 'The future we want is the one we build today' (Tương lai chúng ta mong muốn là tương lai chúng ta xây dựng hôm nay) là thông điệp của tổ chức nào?",opts:["WHO","UNICEF","UNEP (Chương trình MT LHQ)","WTO"],ans:2,exp:"Thông điệp cốt lõi khép lại Chương 1, kêu gọi hành động PTBV ngay thế hệ hiện tại."}
+];
+
+export default function App() {
+  const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState({}); 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const mainRef = useRef(null);
+
+  // Lọc dữ liệu câu hỏi theo mức độ
+  const filteredQuizData = useMemo(() => {
+    if (filterDifficulty === 'all') return quizData;
+    return quizData.filter(q => q.diff === filterDifficulty);
+  }, [filterDifficulty]);
+
+  // Cuộn mượt mà khi chuyển câu
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentIndex, filterDifficulty]);
+
+  // Reset về câu đầu tiên khi đổi filter
+  useEffect(() => setCurrentIndex(0), [filterDifficulty]);
+
+  const currentQ = filteredQuizData[currentIndex];
+  
+  if (!currentQ) return <div className="p-10 flex h-full items-center justify-center font-bold text-slate-500">Không có câu hỏi ở mục này.</div>;
+
+  const absoluteId = currentQ.id;
+  const hasAnsweredCurrent = answers[absoluteId] !== undefined;
+  const currentFilteredCount = filteredQuizData.length;
+  
+  // Tính điểm và tiến trình trên tập dữ liệu đang lọc
+  let answeredCount = 0;
+  let correctCount = 0;
+  filteredQuizData.forEach(q => {
+    if (answers[q.id] !== undefined) {
+      answeredCount++;
+      if (answers[q.id] === q.ans) correctCount++;
+    }
+  });
+
+  const handleOptionSelect = (optIdx) => {
+    if (hasAnsweredCurrent) return;
+    setAnswers(prev => ({ ...prev, [absoluteId]: optIdx }));
+  };
+
+  const handleJump = (idx) => {
+    setCurrentIndex(idx);
+    setIsSidebarOpen(false);
+  };
+
+  const renderBadge = (diff) => {
+    if(diff==='nhanthuc') return <span className="bg-blue-100 text-blue-800 border border-blue-200 px-3 py-1 rounded-full text-xs font-bold uppercase whitespace-nowrap">Nhận thức</span>;
+    if(diff==='coban') return <span className="bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold uppercase whitespace-nowrap">Cơ bản</span>;
+    if(diff==='nangcao') return <span className="bg-rose-100 text-rose-800 border border-rose-200 px-3 py-1 rounded-full text-xs font-bold uppercase whitespace-nowrap">Nâng cao</span>;
+    return null;
+  };
+
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans selection:bg-emerald-200 overflow-hidden">
+      
+      {/* Mobile Header Toggle */}
+      <div className="md:hidden absolute top-0 left-0 right-0 bg-emerald-700 text-white p-4 flex justify-between items-center shadow-md z-20">
+        <div className="flex items-center gap-2 font-bold text-lg truncate">
+          <GraduationCap size={24} className="shrink-0" />
+          <span className="truncate">Siêu Ôn Thi - 145 Câu</span>
+        </div>
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-emerald-600 rounded-lg hover:bg-emerald-500 transition">
+          <List size={22} />
+        </button>
+      </div>
+
+      {/* Sidebar Navigation */}
+      <aside className={`
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 transition-transform duration-300 ease-in-out
+        absolute md:relative top-0 left-0 h-full w-80 bg-white shadow-2xl md:shadow-none md:border-r border-slate-200 z-30
+        flex flex-col pt-16 md:pt-0
+      `}>
+        <div className="hidden md:flex p-6 bg-emerald-700 text-white items-center gap-4 shrink-0 shadow-sm">
+          <GraduationCap size={36} className="shrink-0 text-emerald-100" />
+          <h1 className="font-bold text-xl leading-tight">Môi trường &<br/>PT Bền vững</h1>
+        </div>
+        
+        {/* Bộ lọc Sidebar */}
+        <div className="p-4 bg-slate-50 border-b border-slate-200 shrink-0">
+          <div className="flex items-center gap-2 mb-2 text-slate-600 font-bold text-sm">
+            <Filter size={18} className="text-emerald-600"/> Lọc Mức Độ:
+          </div>
+          <select value={filterDifficulty} onChange={(e) => setFilterDifficulty(e.target.value)} className="w-full bg-white border-2 border-slate-200 text-slate-700 rounded-lg p-2.5 font-bold outline-none cursor-pointer focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all shadow-sm">
+            <option value="all">Tất cả (145 câu)</option>
+            <option value="nhanthuc">🟢 Nhận thức (Cơ sở)</option>
+            <option value="coban">🟡 Cơ bản (Cơ chế, %)</option>
+            <option value="nangcao">🔴 Nâng cao (Luật, CN)</option>
+          </select>
+        </div>
+
+        {/* Bảng Tiến trình */}
+        <div className="p-5 border-b border-slate-100 bg-white shrink-0 shadow-sm z-10">
+          <div className="w-full bg-slate-100 rounded-full h-3 mb-3 overflow-hidden shadow-inner border border-slate-200">
+            <div className="bg-emerald-500 h-3 rounded-full transition-all duration-700 ease-out" style={{ width: `${(answeredCount / currentFilteredCount) * 100}%` }}></div>
+          </div>
+          <div className="flex justify-between items-center font-bold">
+            <p className="text-slate-500 text-sm">Đã làm: <span className="text-slate-800">{answeredCount}/{currentFilteredCount}</span></p>
+            <p className="text-emerald-700 text-sm bg-emerald-50 px-3 py-1 rounded-md border border-emerald-100 shadow-sm">Đúng: {correctCount}</p>
+          </div>
+        </div>
+
+        {/* Lưới các câu hỏi (Grid) */}
+        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+          <div className="grid grid-cols-5 gap-2">
+            {filteredQuizData.map((q, idx) => {
+              const isAnswered = answers[q.id] !== undefined;
+              const isCorrect = isAnswered && answers[q.id] === q.ans;
+              let btnClass = "h-11 rounded-xl font-bold text-sm flex items-center justify-center border-2 transition-all relative ";
+              
+              if (currentIndex === idx) {
+                btnClass += "ring-4 ring-emerald-100 border-emerald-500 bg-white text-emerald-700 shadow-md scale-105 z-10 ";
+              } else if (isAnswered) {
+                btnClass += isCorrect ? "bg-emerald-500 text-white border-emerald-500 shadow-sm" : "bg-rose-500 text-white border-rose-500 shadow-sm";
+              } else {
+                btnClass += "bg-white text-slate-500 border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:shadow-sm";
+              }
+
+              let dot = q.diff==='nhanthuc' ? 'bg-blue-400' : q.diff==='coban' ? 'bg-amber-400' : 'bg-rose-400';
+              return (
+                <button key={q.id} onClick={() => handleJump(idx)} className={btnClass} title={`Câu ${idx + 1}`}>
+                  {idx + 1}
+                  {!isAnswered && <span className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${dot}`}></span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main ref={mainRef} className="flex-1 flex flex-col items-center p-4 pt-20 md:pt-8 md:p-8 lg:p-12 overflow-y-auto bg-slate-100 w-full scroll-smooth">
+        <div className="w-full max-w-4xl pb-24 md:pb-8">
+          
+          <div className="mb-6 flex justify-between items-center gap-4">
+            <span className="px-5 py-2 bg-emerald-100 text-emerald-800 text-sm font-extrabold rounded-full shadow-sm border border-emerald-200 whitespace-nowrap">
+              CÂU {currentIndex + 1} / {currentFilteredCount}
+            </span>
+            {renderBadge(currentQ.diff)}
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden transition-all duration-300">
+            {/* Câu hỏi */}
+            <div className="p-6 md:p-10 border-b border-slate-100 bg-white">
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800 leading-relaxed tracking-tight">
+                {currentQ.q}
+              </h2>
+            </div>
+
+            {/* Các đáp án */}
+            <div className="p-6 md:p-10 bg-slate-50 flex flex-col gap-4">
+              {currentQ.opts.map((opt, idx) => {
+                const isSelected = answers[absoluteId] === idx;
+                const isCorrectOption = idx === currentQ.ans;
+                let style = "p-5 md:p-6 rounded-2xl border-2 flex items-start gap-4 w-full transition-all text-left outline-none ";
+                let Icon = null;
+
+                if (!hasAnsweredCurrent) {
+                  style += "border-slate-200 bg-white hover:border-emerald-400 hover:shadow-lg hover:-translate-y-1 cursor-pointer text-slate-700";
+                } else {
+                  style += "cursor-default ";
+                  if (isSelected && isCorrectOption) { 
+                    style += "border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-md scale-[1.01]"; 
+                    Icon = <CheckCircle2 className="w-7 h-7 text-emerald-600 shrink-0 mt-0.5" />; 
+                  }
+                  else if (isSelected && !isCorrectOption) { 
+                    style += "border-rose-400 bg-rose-50 text-rose-900 font-bold shadow-md scale-[1.01]"; 
+                    Icon = <XCircle className="w-7 h-7 text-rose-500 shrink-0 mt-0.5" />; 
+                  }
+                  else if (isCorrectOption) { 
+                    style += "border-emerald-400 bg-white text-emerald-800 border-dashed font-bold bg-emerald-50/50"; 
+                    Icon = <CheckCircle2 className="w-7 h-7 text-emerald-400 shrink-0 mt-0.5 opacity-80" />; 
+                  }
+                  else { 
+                    style += "border-slate-100 bg-white text-slate-400 opacity-60"; 
+                  }
+                }
+
+                return (
+                  <button key={idx} onClick={() => handleOptionSelect(idx)} disabled={hasAnsweredCurrent} className={style}>
+                    <div className={`flex items-center justify-center shrink-0 w-8 h-8 rounded-full border-2 text-sm font-black mt-0.5 transition-colors ${!hasAnsweredCurrent ? 'border-slate-300 text-slate-400' : 'border-inherit text-inherit'}`}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <div className="flex-1 text-lg pt-1 leading-snug">{opt}</div>
+                    {Icon}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Khung Giải thích */}
+            <div className={`overflow-hidden transition-all duration-700 ease-in-out ${hasAnsweredCurrent ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className="p-6 md:p-10 bg-emerald-50 border-t border-emerald-100 flex items-start gap-4">
+                <div className="p-2 bg-emerald-100 rounded-full shrink-0 mt-1 shadow-sm">
+                  <Info className="w-6 h-6 text-emerald-700" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-emerald-900 uppercase tracking-widest mb-3">Giải thích chuyên môn</h3>
+                  <p className="text-emerald-800 text-lg md:text-xl font-medium leading-relaxed">
+                    {currentQ.exp}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Phím điều hướng */}
+          <div className="mt-8 flex justify-between px-2 gap-4">
+            <button 
+              onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : 0)} 
+              disabled={currentIndex === 0} 
+              className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all ${currentIndex === 0 ? 'bg-slate-200 text-slate-400 opacity-50 cursor-not-allowed' : 'bg-white text-slate-700 shadow-md hover:shadow-lg border border-slate-200 hover:-translate-y-1 active:translate-y-0'}`}
+            >
+              <ChevronLeft size={24} /> <span className="hidden sm:inline">Câu trước</span>
+            </button>
+            <button 
+              onClick={() => setCurrentIndex(currentIndex < currentFilteredCount - 1 ? currentIndex + 1 : currentIndex)} 
+              disabled={currentIndex === currentFilteredCount - 1} 
+              className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all shadow-lg ${currentIndex === currentFilteredCount - 1 ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-xl hover:-translate-y-1 active:translate-y-0 active:bg-emerald-700'}`}
+            >
+              <span>{currentIndex === currentFilteredCount - 1 ? 'Hết danh sách' : 'Câu tiếp theo'}</span> 
+              {currentIndex !== currentFilteredCount - 1 && <ChevronRight size={24} />}
+            </button>
+          </div>
+        </div>
+      </main>
+      
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 z-20 md:hidden backdrop-blur-sm transition-all" onClick={() => setIsSidebarOpen(false)} />
+      )}
+    </div>
+  );
+}
